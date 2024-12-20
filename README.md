@@ -18,6 +18,7 @@
 | 13 | :star: | :star: |
 | 14 | :star: | :star: |
 | 15 | :star: | :star: |
-| 16 | :star: | |
-| 17 | :star: | |
-| 18 | :star: | :star |
+| 16 | :star: | :star: |
+| 17 | :star: | :star: |
+| 18 | :star: | :star: |
+| 19 | :star: | :star: |
