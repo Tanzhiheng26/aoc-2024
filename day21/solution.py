@@ -1,5 +1,3 @@
-from collections import deque
-
 numeric_keypad = [
     ['7', '8', '9'],
     ['4', '5', '6'],
@@ -11,14 +9,6 @@ directional_keypad = [
     ['', '^', 'A'],
     ['<', 'v', '>']
 ]
-
-DIRECTIONS = ((0, 1), (1, 0), (0, -1), (-1, 0))
-BUTTON = {
-    (0, 1): '>',
-    (1, 0): 'v',
-    (0, -1): '<',
-    (-1, 0): '^'
-}
 
 def read_input(file):
     codes = []
@@ -38,51 +28,61 @@ def get_index(button, grid):
             if grid[r][c] == button:
                 return (r, c)
 
-def bfs(start, end, keypad):
-    if start == end:
-        return ['A']
+def get_paths(start, end, keypad):
+    start_r, start_c = get_index(start, keypad)
+    end_r, end_c = get_index(end, keypad)
+    dr = end_r - start_r
+    dc = end_c - start_c
+    
+    vertical_moves = ()
+    horizontal_moves = ()
+    if dr > 0:
+        vertical_moves = ('v',) * abs(dr)
+    elif dr < 0:
+        vertical_moves = ('^',) * abs(dr)
+    
+    if dc > 0:
+        horizontal_moves = ('>',) * abs(dc)
+    elif dc < 0:
+        horizontal_moves = ('<',) * abs(dc)
+    
+    paths = set()
+    if inbounds(start_r + dr, start_c, keypad):
+        paths.add(vertical_moves + horizontal_moves + ('A',))
+    if inbounds(start_r, start_c + dc, keypad):
+        paths.add(horizontal_moves + vertical_moves + ('A',))
+    
+    return paths
 
-    start_index = get_index(start, keypad)
-    q = deque([start_index])
-    visited = {start_index}
-    parent = {}
+def get_sequences(output, keypad):
+    sequences = []
 
-    while q:
-        r, c = q.popleft()
-        for dr, dc in DIRECTIONS:
-            next_r = r + dr
-            next_c = c + dc
-            if inbounds(next_r, next_c, keypad) and (next_r, next_c) not in visited:
-                q.append((next_r, next_c))
-                visited.add((next_r, next_c))        
-                parent[(next_r, next_c)] = ((r, c), BUTTON[(dr, dc)])
+    def dfs(i, seq):
+        if i == len(output):
+            sequences.append(seq)
+            return
 
-                if keypad[next_r][next_c] == end:
-                    moves = []
-                    i = (next_r, next_c)
-                    while i != start_index:
-                        i, move = parent[i]
-                        moves.append(move)
-                    return moves[::-1] + ['A']
-
-def get_moves(code, keypad):
-    moves = []
-    for i in range(len(code)):
-        if i == 0:
-            moves += bfs('A', code[i], keypad)
-        else:
-            moves += bfs(code[i - 1], code[i], keypad)
-    return moves
+        paths = get_paths('A', output[i], keypad) if i == 0 else get_paths(output[i - 1], output[i], keypad)
+        for p in paths:
+            dfs(i + 1, seq + p)
+    
+    dfs(0, ())
+    return sequences
 
 def part1(file):
     codes = read_input(file)
     result = 0
     for code in codes:
-        moves1 = get_moves(code, numeric_keypad)
-        moves2 = get_moves(moves1, directional_keypad)
-        moves3 = get_moves(moves2, directional_keypad)
-        complexity = len(moves3) * int(code[:-1])
+        seq1 = get_sequences(code, numeric_keypad)
+        seq2 = []
+        for seq in seq1:
+            seq2 += get_sequences(seq, directional_keypad)
+        seq3 = []
+        for seq in seq2:
+            seq3 += get_sequences(seq, directional_keypad)
+        
+        complexity = min(map(len, seq3)) * int(code[:-1])
         result += complexity
     return result
 
-print(part1("test.txt"))
+print(part1("input.txt"))

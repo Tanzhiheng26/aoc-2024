@@ -23,8 +23,8 @@
 | 18 | :star: | :star: |
 | 19 | :star: | :star: |
 | 20 | :star: | :star: |
-| 21 | | |
+| 21 | :star: | |
 | 22 | :star: | :star: |
 | 23 | :star: | :star: |
 | 24 | :star: | :star: |
-| 25 | | |
+| 25 | :star: | |
