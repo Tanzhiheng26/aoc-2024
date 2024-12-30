@@ -1,3 +1,5 @@
+from functools import cache
+
 numeric_keypad = [
     ['7', '8', '9'],
     ['4', '5', '6'],
@@ -34,55 +36,88 @@ def get_paths(start, end, keypad):
     dr = end_r - start_r
     dc = end_c - start_c
     
-    vertical_moves = ()
-    horizontal_moves = ()
+    vertical_moves = ''
+    horizontal_moves = ''
     if dr > 0:
-        vertical_moves = ('v',) * abs(dr)
+        vertical_moves = 'v' * abs(dr)
     elif dr < 0:
-        vertical_moves = ('^',) * abs(dr)
+        vertical_moves = '^' * abs(dr)
     
     if dc > 0:
-        horizontal_moves = ('>',) * abs(dc)
+        horizontal_moves = '>' * abs(dc)
     elif dc < 0:
-        horizontal_moves = ('<',) * abs(dc)
+        horizontal_moves = '<' * abs(dc)
     
     paths = set()
     if inbounds(start_r + dr, start_c, keypad):
-        paths.add(vertical_moves + horizontal_moves + ('A',))
+        paths.add(vertical_moves + horizontal_moves + 'A')
     if inbounds(start_r, start_c + dc, keypad):
-        paths.add(horizontal_moves + vertical_moves + ('A',))
+        paths.add(horizontal_moves + vertical_moves + 'A')
     
     return paths
 
 def get_sequences(output, keypad):
     sequences = []
 
-    def dfs(i, seq):
+    def helper(i, seq):
         if i == len(output):
             sequences.append(seq)
             return
 
         paths = get_paths('A', output[i], keypad) if i == 0 else get_paths(output[i - 1], output[i], keypad)
         for p in paths:
-            dfs(i + 1, seq + p)
+            helper(i + 1, seq + p)
     
-    dfs(0, ())
+    helper(0, '')
     return sequences
 
 def part1(file):
     codes = read_input(file)
     result = 0
     for code in codes:
-        seq1 = get_sequences(code, numeric_keypad)
-        seq2 = []
-        for seq in seq1:
-            seq2 += get_sequences(seq, directional_keypad)
-        seq3 = []
-        for seq in seq2:
-            seq3 += get_sequences(seq, directional_keypad)
+        sequences = get_sequences(code, numeric_keypad)
+
+        for _ in range(2):
+            next_sequences = []
+            for seq in sequences:
+                next_sequences += get_sequences(seq, directional_keypad)
+            sequences = next_sequences
         
-        complexity = min(map(len, seq3)) * int(code[:-1])
+        complexity = min(map(len, sequences)) * int(code[:-1])
         result += complexity
     return result
 
 print(part1("input.txt"))
+
+
+MAX_LEVEL = 26
+
+# Based on https://www.reddit.com/r/adventofcode/comments/1hjx0x4/2024_day_21_quick_tutorial_to_solve_part_2_in/
+# Because every input sequence returns to 'A' we can split them up and evaluate them separately.
+@cache
+def dfs(part, level):
+    if level == 0:
+        return len(part)
+    
+    sequences = get_sequences(part, numeric_keypad) if level == MAX_LEVEL else get_sequences(part, directional_keypad)
+    result = float('inf')
+    for sequence in sequences:
+        parts = sequence.split('A')[:-1]
+        total = 0
+        for part in parts:
+            total += dfs(part + 'A', level - 1)
+        result = min(result, total)
+    
+    return result
+
+
+def part2(file):
+    codes = read_input(file)
+    result = 0
+    for code in codes:
+        min_length = dfs(code, MAX_LEVEL)
+        complexity = min_length * int(code[:-1])
+        result += complexity
+    return result
+
+print(part2("input.txt"))
